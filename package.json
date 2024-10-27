@@ -1,0 +1,22 @@
+{
+  "name": "backend-lab2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SharpDevOps10/Backend-Lab2.git"
+  },
+  "author": "SharpDevOps10",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SharpDevOps10/Backend-Lab2/issues"
+  },
+  "homepage": "https://github.com/SharpDevOps10/Backend-Lab2#readme",
+  "description": "",
+  "dependencies": {
+    "fastify": "^5.0.0"
+  }
+}
