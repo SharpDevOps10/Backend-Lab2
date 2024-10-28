@@ -15,4 +15,7 @@ $ node server.js
 ```
 
 Then you will see `Server is running on http://0.0.0.0:3000`. Use postman for testing
-endpoints `/user, /category, /recrod`.
+endpoints `/user, /category, /record`.
+
+## Deploy
+Here is the link for the deploy: https://backend-lab2-hpb0.onrender.com/
