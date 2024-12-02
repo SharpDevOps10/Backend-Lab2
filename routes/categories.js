@@ -1,32 +1,67 @@
 'use strict';
 
-const { categories } = require('../data');
-let { categoryId } = require('../data');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-async function categoryRoutes(fastify) {
-  fastify.post('/category', (request, reply) => {
+async function categoryRoutes (fastify) {
+  fastify.post('/category', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', minLength: 1 },
+        },
+      },
+    },
+  }, async (request, reply) => {
     const { name } = request.body;
-    const newCategory = { id: categoryId++, name };
-    categories.push(newCategory);
-    reply.send(newCategory);
+    try {
+      const newCategory = await prisma.category.create({
+        data: { name },
+      });
+      reply.send(newCategory);
+    } catch (error) {
+      reply.status(500).send({ error: 'Failed to create category' });
+    }
   });
 
-  fastify.get('/categories', (request, reply) => {
-    reply.send(categories);
+  fastify.get('/categories', async (request, reply) => {
+    try {
+      const categories = await prisma.category.findMany();
+      reply.send(categories);
+    } catch (error) {
+      reply.status(500).send({ error: 'Failed to fetch categories' });
+    }
   });
 
-  fastify.get('/category/:categoryId', (request, reply) => {
-    const category = categories.find((c) => c.id === parseInt(request.params.categoryId));
-    category ? reply.send(category) : reply.status(404).send({ error: 'Category not found' });
+  fastify.get('/category/:categoryId', async (request, reply) => {
+    const { categoryId } = request.params;
+    try {
+      const category = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+      if (!category) {
+        return reply.status(404).send({ error: 'Category not found' });
+      }
+      reply.send(category);
+    } catch (error) {
+      reply.status(500).send({ error: 'Failed to fetch category' });
+    }
   });
 
-  fastify.delete('/category/:categoryId', (request, reply) => {
-    const categoryIndex = categories.findIndex((c) => c.id === parseInt(request.params.categoryId));
-    if (categoryIndex === -1) {
-      reply.status(404).send({ error: 'Category not found' });
-    } else {
-      categories.splice(categoryIndex, 1);
-      reply.send({ message: 'Category deleted' });
+  fastify.delete('/category/:categoryId', async (request, reply) => {
+    const { categoryId } = request.params;
+    try {
+      const category = await prisma.category.delete({
+        where: { id: categoryId },
+      });
+      reply.send({ message: 'Category deleted', category });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        return reply.status(404).send({ error: 'Category not found' });
+      }
+      reply.status(500).send({ error: 'Failed to delete category' });
     }
   });
 }
