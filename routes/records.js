@@ -1,41 +1,95 @@
 'use strict';
 
-const { records } = require('../data');
-let { recordId } = require('../data');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-async function recordRoutes(fastify) {
-  fastify.post('/record', (request, reply) => {
-    const { userId, categoryId, amount } = request.body;
-    const newRecord = { id: recordId++, userId, categoryId, dateTime: new Date(), amount };
-    records.push(newRecord);
-    reply.send(newRecord);
-  });
+async function recordRoutes (fastify) {
+  fastify.post('/record', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['userId', 'categoryId', 'amount'],
+        properties: {
+          userId: { type: 'string' },
+          categoryId: { type: 'string' },
+          amount: { type: 'number' },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { userId, categoryId, amount, currencyId } = request.body;
 
-  fastify.get('/record/:recordId', (request, reply) => {
-    const record = records.find((r) => r.id === parseInt(request.params.recordId));
-    record ? reply.send(record) : reply.status(404).send({ error: 'Record not found' });
-  });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!user) {
+        return reply.status(404).send({ error: 'User not found' });
+      }
 
-  fastify.delete('/record/:recordId', (request, reply) => {
-    const recordIndex = records.findIndex((r) => r.id === parseInt(request.params.recordId));
-    if (recordIndex === -1) {
-      reply.status(404).send({ error: 'Record not found' });
-    } else {
-      records.splice(recordIndex, 1);
-      reply.send({ message: 'Record deleted' });
+      const newRecord = await prisma.record.create({
+        data: {
+          userId,
+          categoryId,
+          amount,
+          currencyId: currencyId || user.currencyId,
+        },
+      });
+
+      reply.send(newRecord);
+    } catch (error) {
+      reply.status(500).send({ error: 'Failed to create record' });
     }
   });
 
-  fastify.get('/record', (request, reply) => {
-    const { userId, categoryId } = request.query;
-    if (!userId && !categoryId) return reply.status(400).send({ error: 'user_id or category_id parameter is required' });
-
-    let filteredRecords = records;
-    if (userId) filteredRecords = filteredRecords.filter((r) => r.userId === parseInt(userId));
-    if (categoryId) filteredRecords = filteredRecords.filter((r) => r.categoryId === parseInt(categoryId));
-
-    reply.send(filteredRecords);
+  fastify.get('/record/:recordId', async (request, reply) => {
+    const { recordId } = request.params;
+    try {
+      const record = await prisma.record.findUnique({
+        where: { id: recordId },
+        include: { user: true, category: true, currency: true },
+      });
+      if (!record) {
+        return reply.status(404).send({ error: 'Record not found' });
+      }
+      reply.send(record);
+    } catch (error) {
+      reply.status(500).send({ error: 'Failed to fetch record' });
+    }
   });
+
+  fastify.delete('/record/:recordId', async (request, reply) => {
+    const { recordId } = request.params;
+    try {
+      const record = await prisma.record.delete({
+        where: { id: recordId },
+      });
+      reply.send({ message: 'Record deleted', record });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        return reply.status(404).send({ error: 'Record not found' });
+      }
+      reply.status(500).send({ error: 'Failed to delete record' });
+    }
+  });
+
+  fastify.get('/record', async (request, reply) => {
+    const { userId, categoryId } = request.query;
+
+    try {
+      const records = await prisma.record.findMany({
+        where: {
+          userId: userId ? userId : undefined,
+          categoryId: categoryId ? categoryId : undefined,
+        },
+        include: { user: true, category: true, currency: true },
+      });
+      reply.send(records);
+    } catch (error) {
+      reply.status(500).send({ error: 'Failed to fetch records' });
+    }
+  });
+
 }
 
 module.exports = recordRoutes;
