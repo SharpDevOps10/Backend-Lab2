@@ -13,6 +13,7 @@ async function recordRoutes (fastify) {
           userId: { type: 'string' },
           categoryId: { type: 'string' },
           amount: { type: 'number' },
+          currencyId: { type: 'string' },
         },
       },
     },
@@ -27,17 +28,47 @@ async function recordRoutes (fastify) {
         return reply.status(404).send({ error: 'User not found' });
       }
 
+      let selectedCurrency;
+      if (currencyId) {
+        selectedCurrency = await prisma.currency.findUnique({
+          where: { id: currencyId },
+        });
+
+        if (!selectedCurrency) {
+          return reply.status(400).send({ error: `Currency with id ${ currencyId } not found` });
+        }
+      }
+
+      if (!selectedCurrency) {
+        selectedCurrency = await prisma.currency.findUnique({
+          where: { id: user.currencyId },
+        });
+      }
+
+      if (!selectedCurrency) {
+        selectedCurrency = await prisma.currency.findFirst({
+          where: { name: 'USD' },
+        });
+
+        if (!selectedCurrency) {
+          selectedCurrency = await prisma.currency.create({
+            data: { name: 'USD' },
+          });
+        }
+      }
+
       const newRecord = await prisma.record.create({
         data: {
           userId,
           categoryId,
           amount,
-          currencyId: currencyId || user.currencyId,
+          currencyId: selectedCurrency.id,
         },
       });
 
       reply.send(newRecord);
     } catch (error) {
+      console.error('Error creating record:', error);
       reply.status(500).send({ error: 'Failed to create record' });
     }
   });
@@ -89,7 +120,6 @@ async function recordRoutes (fastify) {
       reply.status(500).send({ error: 'Failed to fetch records' });
     }
   });
-
 }
 
 module.exports = recordRoutes;
