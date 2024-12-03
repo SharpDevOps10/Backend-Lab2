@@ -1,4 +1,7 @@
-# Backend Lab2
+# Backend Lab2-4
+
+Variant: 22 % 3 = 1
+Variant = 1 (Currency)
 
 ## How to start locally?
 
