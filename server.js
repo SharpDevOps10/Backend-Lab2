@@ -5,6 +5,7 @@ const fastify = require('fastify')({ logger: false });
 fastify.register(require('./routes/users'));
 fastify.register(require('./routes/categories'));
 fastify.register(require('./routes/records'));
+fastify.register(require('./routes/currency'));
 
 const start = async () => {
   try {
