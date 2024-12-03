@@ -106,6 +106,9 @@ async function recordRoutes (fastify) {
 
   fastify.get('/record', async (request, reply) => {
     const { userId, categoryId } = request.query;
+    if (!userId && !categoryId) {
+      return reply.status(400).send({ error: 'Either userId or categoryId must be provided' });
+    }
 
     try {
       const records = await prisma.record.findMany({
