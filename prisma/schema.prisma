@@ -16,6 +16,7 @@ datasource db {
 model User {
   id         String   @id @default(uuid())
   name       String
+  password   String
   currencyId String   @map("currency_id")
   records    Record[]
   currency   Currency @relation(fields: [currencyId], references: [id])

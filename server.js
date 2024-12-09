@@ -6,6 +6,7 @@ fastify.register(require('./routes/users'));
 fastify.register(require('./routes/categories'));
 fastify.register(require('./routes/records'));
 fastify.register(require('./routes/currency'));
+fastify.register(require('./routes/auth'));
 
 const start = async () => {
   try {
