@@ -17,6 +17,7 @@ async function recordRoutes (fastify) {
         },
       },
     },
+    preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     const { userId, categoryId, amount, currencyId } = request.body;
 
@@ -73,7 +74,9 @@ async function recordRoutes (fastify) {
     }
   });
 
-  fastify.get('/record/:recordId', async (request, reply) => {
+  fastify.get('/record/:recordId', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
     const { recordId } = request.params;
     try {
       const record = await prisma.record.findUnique({
@@ -89,7 +92,9 @@ async function recordRoutes (fastify) {
     }
   });
 
-  fastify.delete('/record/:recordId', async (request, reply) => {
+  fastify.delete('/record/:recordId', {
+      preHandler: [fastify.authenticate],
+    }, async (request, reply) => {
     const { recordId } = request.params;
     try {
       const record = await prisma.record.delete({

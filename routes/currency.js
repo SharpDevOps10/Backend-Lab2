@@ -14,6 +14,7 @@ async function currencyRoutes (fastify) {
         },
       },
     },
+    preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     const { name } = request.body;
 

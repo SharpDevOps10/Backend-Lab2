@@ -3,8 +3,10 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-async function userRoutes (fastify) {
-  fastify.get('/user/:userId', async (request, reply) => {
+async function userRoutes(fastify) {
+  fastify.get('/user/:userId', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
     const { userId } = request.params;
     try {
       const user = await prisma.user.findUnique({
@@ -20,7 +22,9 @@ async function userRoutes (fastify) {
     }
   });
 
-  fastify.delete('/user/:userId', async (request, reply) => {
+  fastify.delete('/user/:userId', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
     const { userId } = request.params;
     try {
       const user = await prisma.user.delete({
@@ -35,7 +39,9 @@ async function userRoutes (fastify) {
     }
   });
 
-  fastify.get('/users', async (request, reply) => {
+  fastify.get('/users', {
+    preHandler: [fastify.authenticate]
+  }, async (request, reply) => {
     try {
       const users = await prisma.user.findMany();
       reply.send(users);

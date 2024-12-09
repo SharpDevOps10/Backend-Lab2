@@ -14,6 +14,7 @@ async function categoryRoutes (fastify) {
         },
       },
     },
+    preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     const { name } = request.body;
     try {
@@ -26,7 +27,9 @@ async function categoryRoutes (fastify) {
     }
   });
 
-  fastify.get('/categories', async (request, reply) => {
+  fastify.get('/categories', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
     try {
       const categories = await prisma.category.findMany();
       reply.send(categories);
@@ -35,22 +38,27 @@ async function categoryRoutes (fastify) {
     }
   });
 
-  fastify.get('/category/:categoryId', async (request, reply) => {
-    const { categoryId } = request.params;
-    try {
-      const category = await prisma.category.findUnique({
-        where: { id: categoryId },
-      });
-      if (!category) {
-        return reply.status(404).send({ error: 'Category not found' });
+  fastify.get('/category/:categoryId',
+    {
+      preHandler: [fastify.authenticate],
+    }, async (request, reply) => {
+      const { categoryId } = request.params;
+      try {
+        const category = await prisma.category.findUnique({
+          where: { id: categoryId },
+        });
+        if (!category) {
+          return reply.status(404).send({ error: 'Category not found' });
+        }
+        reply.send(category);
+      } catch (error) {
+        reply.status(500).send({ error: 'Failed to fetch category' });
       }
-      reply.send(category);
-    } catch (error) {
-      reply.status(500).send({ error: 'Failed to fetch category' });
-    }
-  });
+    });
 
-  fastify.delete('/category/:categoryId', async (request, reply) => {
+  fastify.delete('/category/:categoryId', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
     const { categoryId } = request.params;
     try {
       const category = await prisma.category.delete({
